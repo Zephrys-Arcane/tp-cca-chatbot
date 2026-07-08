@@ -626,6 +626,8 @@ Use bullet points whenever recommending multiple CCAs.
 
             console.log(`❌ ${model} failed`);
 
+            console.error(err);
+
             lastError = err;
 
         }
@@ -748,6 +750,7 @@ for (const item of matches) {
         catch (err) {
 
             console.error("❌ All models failed");
+            console.error(lastError);
 
             return res.json({
 
