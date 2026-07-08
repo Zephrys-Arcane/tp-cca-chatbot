@@ -5,10 +5,13 @@
 import express from "express";
 import cors from "cors";
 import fs from "fs";
+import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 
+dotenv.config();
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -34,7 +37,7 @@ console.log(`✅ Loaded ${ccaDatabase.length} CCAs.`);
 // Keeping it here temporarily for local development.
 
 const ai = new GoogleGenAI({
-  apiKey: "AIzaSyB8CfFxQg8E8WEGHrDPC5t-KEQWEgrKM0o"
+  apiKey: process.env.GEMINI_API_KEY
 });
 
 
