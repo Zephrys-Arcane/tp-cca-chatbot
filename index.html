@@ -178,14 +178,14 @@
 
     try {
       const res = await fetch("https://tp-cca-chatbot.onrender.com/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: message
-        })
-      });
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        message: message
+    })
+});
 
       const data = await res.json();
 
