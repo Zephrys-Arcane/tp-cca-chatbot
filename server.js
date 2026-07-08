@@ -45,8 +45,7 @@ const ai = new GoogleGenAI({
 // GOOGLE SHEETS
 // ======================================================
 
-const GOOGLE_SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbxCKRwqu1WXlTelZBrH0xxgue4EG14PFGCrBXdr89pR6ttmQORrdCqxohANBv4nuKaGOQ/exec";
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
 
 
 // ======================================================
