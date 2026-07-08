@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@google/genai": "^1.50.1",
+    "cors": "^2.8.6",
+    "csv-parser": "^3.2.1",
+    "express": "^5.2.1",
+    "xlsx": "^0.18.5"
+  }
+}
