@@ -715,6 +715,26 @@ app.post("/chat", async (req, res) => {
         console.log("👤 User:", userMessage);
 
         // ----------------------------------
+        // Handle Casual Greetings
+        // ----------------------------------
+
+        const greetingPattern = /^(hi|hello|hey|hiya|howdy|good morning|good afternoon|good evening)[!.?,\s]*$/i;
+
+        if (greetingPattern.test(userMessage)) {
+
+            return res.json({
+
+                success: true,
+
+                response:
+                    "Hi! 👋 I'm the Temasek Polytechnic CCA Chatbot. How can I help you today? You can ask me about TP CCAs, clubs, societies, sports teams, training, achievements, or recommendations."
+
+            });
+
+        }
+
+
+        // ----------------------------------
         // Search TP CCA Database
         // ----------------------------------
 
