@@ -732,6 +732,64 @@ app.post("/chat", async (req, res) => {
             });
 
         }
+        // ----------------------------------
+        // Handle Casual Thanks
+        // ----------------------------------
+
+        const thanksPattern = /^(thanks|thank you|thanks a lot|thank you so much)[!.?,\s]*$/i;
+
+        if (thanksPattern.test(userMessage)) {
+
+            return res.json({
+
+                success: true,
+
+                response:
+                 "You're welcome! 😊 Let me know if you'd like to know more about any Temasek Polytechnic CCA."
+
+           });
+
+        }
+
+
+        // ----------------------------------
+        // Handle Casual Goodbyes
+        // ----------------------------------
+
+        const goodbyePattern = /^(bye|goodbye|see you|see you later)[!.?,\s]*$/i;
+
+        if (goodbyePattern.test(userMessage)) {
+
+            return res.json({
+
+              success: true,
+
+             response:
+                   "Goodbye! 👋 Good luck finding a CCA that's right for you!"
+
+            });
+
+        }
+
+
+        // ----------------------------------
+        // Handle Help Questions
+        // ----------------------------------
+
+        const helpPattern = /^(help|what can you do|what can you help me with)[!.?,\s]*$/i;
+
+        if (helpPattern.test(userMessage)) {
+
+            return res.json({
+
+                success: true,
+
+                response:
+                    "I can help you explore Temasek Polytechnic CCAs! You can ask me about sports, clubs, societies, performing arts, training schedules, achievements, advisors, or ask me to recommend a CCA for you."
+
+            });
+
+        }
 
 
         // ----------------------------------
