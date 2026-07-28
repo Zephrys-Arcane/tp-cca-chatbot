@@ -524,12 +524,23 @@ ${Array.isArray(cca.keywords)
 // CALL GEMINI
 // ======================================================
 
-async function callModel(userMessage, context) {
+async function callModel(userMessage, context, history) {
 
     let lastError;
 
+    // Convert conversation history into text
+    const conversationHistory = history
+        .map(msg => `${msg.role}: ${msg.content}`)
+        .join("\n");
+
     const prompt = `
 ${context}
+
+==================================================
+
+CONVERSATION HISTORY
+
+${conversationHistory || "No previous conversation."}
 
 ==================================================
 
@@ -686,6 +697,7 @@ app.post("/chat", async (req, res) => {
     try {
 
         const userMessage = req.body.message?.trim();
+        const history = req.body.history || [];
 
         if (!userMessage) {
 
@@ -741,7 +753,8 @@ for (const item of matches) {
 
             const result = await callModel(
                 userMessage,
-                context
+                context,
+                history
             );
 
             aiText = result.text;
