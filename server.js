@@ -394,7 +394,6 @@ function searchCCA(userMessage) {
     // DYNAMIC CATEGORY DETECTION
     // ==========================================
 
-    // Get every unique category from the database
     const categories = [...new Set(
         ccaDatabase.map(cca => cca.category)
     )];
@@ -403,25 +402,37 @@ function searchCCA(userMessage) {
 
         const cleanedCategory = clean(category);
 
-        // User omitted the word "CCAs"
         const shortCategory = cleanedCategory
             .replace(" ccas", "")
             .trim();
 
-        const categoryRegex = new RegExp(`\\b${cleanedCategory}\\b`, "i");
-        const shortCategoryRegex = new RegExp(`\\b${shortCategory}\\b`, "i");
+        // Only treat the query as a category listing
+        // if the user is clearly asking to SEE/LIST the category.
+        const isListingRequest =
+            query === cleanedCategory ||
+            query === shortCategory ||
+            query === `${shortCategory} ccas` ||
+            query === `show me ${shortCategory}` ||
+            query === `show me ${shortCategory} ccas` ||
+            query === `show ${shortCategory}` ||
+            query === `show ${shortCategory} ccas` ||
+            query === `list ${shortCategory}` ||
+            query === `list ${shortCategory} ccas` ||
+            query === `list all ${shortCategory}` ||
+            query === `list all ${shortCategory} ccas` ||
+            query === `what are the ${shortCategory} ccas` ||
+            query === `what ${shortCategory} ccas are there` ||
+            query === `which ${shortCategory} ccas are there`;
 
-        if (
-            (
-                categoryRegex.test(query) ||
-                shortCategoryRegex.test(query)
-            ) &&
-            isCategoryListing(query, cleanedCategory, shortCategory)
-        ) {
+        if (isListingRequest) {
 
             const matches = ccaDatabase
-                .filter(cca => clean(cca.category) === cleanedCategory)
-                .sort((a, b) => a.name.localeCompare(b.name));
+                .filter(cca =>
+                    clean(cca.category) === cleanedCategory
+                )
+                .sort((a, b) =>
+                    a.name.localeCompare(b.name)
+                );
 
             return matches.map(cca => ({
                 score: 9999,
@@ -894,47 +905,63 @@ app.post("/chat", async (req, res) => {
 
         const matches = searchCCA(userMessage);
 
-        // ----------------------------------
-        // Handle Category Listings
-        // ----------------------------------
+// ----------------------------------
+// Handle Category Listings
+// ----------------------------------
 
-        if (
-            matches.length > 0 &&
-            matches[0].confidence === "CATEGORY MATCH"
-        ) {
+if (
+    matches.length > 0 &&
+    matches[0].confidence === "CATEGORY MATCH"
+) {
 
-            console.log(`📚 Retrieved ${matches.length} CATEGORY MATCHES`);
-
-            const category = matches[0].cca.category;
-
-            const list = matches
-                .map(item => `- ${item.cca.name}`)
-                .join("\n");
-
-            return res.json({
-                success: true,
-                response:
-            `Temasek Polytechnic offers the following ${category}:
-
-            ${list}`
-                });
-            }
-
-        console.log(`📚 Retrieved ${matches.length} matching CCAs`);
-
-        if (matches.length > 0) {
-
-            console.log("\nTop Matches:");
-
-for (const item of matches) {
+    const category = matches[0].cca.category;
 
     console.log(
-        `• ${item.cca.name.padEnd(35)} Score: ${String(item.score).padEnd(5)} Confidence: ${item.confidence}`
+        `📚 Retrieved ${matches.length} CATEGORY MATCHES`
     );
+
+    console.log(`📂 Category: ${category}`);
+
+    for (const item of matches) {
+
+        console.log(
+            `• ${item.cca.name}`
+        );
+
+    }
+
+    const list = matches
+        .map(item => `- ${item.cca.name}`)
+        .join("\n");
+
+    return res.json({
+
+        success: true,
+
+        response:
+`Temasek Polytechnic offers the following ${category}:
+
+${list}`
+
+    });
 
 }
 
-        }
+console.log(`📚 Retrieved ${matches.length} matching CCAs`);
+
+if (matches.length > 0) {
+
+    console.log("\nTop Matches:");
+
+    for (const item of matches) {
+
+        console.log(
+            `• ${item.cca.name.padEnd(35)} Score: ${String(item.score).padEnd(5)} Confidence: ${item.confidence}`
+        );
+
+    }
+
+}
 
         // ----------------------------------
         // Build Context
