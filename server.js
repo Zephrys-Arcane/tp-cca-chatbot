@@ -47,6 +47,8 @@ const ai = new GoogleGenAI({
 
 const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
 
+console.log("GOOGLE_SCRIPT_URL =", GOOGLE_SCRIPT_URL);
+
 
 // ======================================================
 // MODEL FALLBACK
