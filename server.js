@@ -765,7 +765,7 @@ Use bullet points whenever recommending multiple CCAs.
 // LOG TO GOOGLE SHEETS
 // ======================================================
 
-async function logToSheets(query, response, model) {
+async function logToSheets(query, response, model = "N/A") {
 
     try {
 
@@ -820,15 +820,23 @@ app.post("/chat", async (req, res) => {
 
         if (!userMessage) {
 
-            return res.json({
+    const reply = "Please enter a question.";
 
-                success: false,
+    await logToSheets(
+        "(Empty Message)",
+        reply,
+        "Validation Error"
+    );
 
-                response: "Please enter a question."
+    return res.json({
 
-            });
+        success: false,
 
-        }
+        response: reply
+
+    });
+
+}
 
         console.log("\n========================================");
         console.log("👤 User:", userMessage);
@@ -841,16 +849,23 @@ app.post("/chat", async (req, res) => {
 
         if (greetingPattern.test(userMessage)) {
 
-            return res.json({
+        const reply =
+            "Hi! 👋 I'm the Temasek Polytechnic CCA Chatbot. How can I help you today? You can ask me about TP CCAs, clubs, societies, sports teams, training, achievements, or recommendations.";
 
-                success: true,
+        await logToSheets(
+            userMessage,
+            reply,
+            "Greeting"
+        );
 
-                response:
-                    "Hi! 👋 I'm the Temasek Polytechnic CCA Chatbot. How can I help you today? You can ask me about TP CCAs, clubs, societies, sports teams, training, achievements, or recommendations."
+        return res.json({
 
-            });
+            success: true,
+            response: reply
 
-        }
+        });
+
+    }
         // ----------------------------------
         // Handle Casual Thanks
         // ----------------------------------
@@ -859,16 +874,24 @@ app.post("/chat", async (req, res) => {
 
         if (thanksPattern.test(userMessage)) {
 
-            return res.json({
+    const reply =
+        "You're welcome! 😊 Let me know if you'd like to know more about any Temasek Polytechnic CCA.";
 
-                success: true,
+    await logToSheets(
+        userMessage,
+        reply,
+        "Thanks"
+    );
 
-                response:
-                 "You're welcome! 😊 Let me know if you'd like to know more about any Temasek Polytechnic CCA."
+    return res.json({
 
-           });
+        success: true,
 
-        }
+        response: reply
+
+    });
+
+}
 
 
         // ----------------------------------
@@ -879,16 +902,24 @@ app.post("/chat", async (req, res) => {
 
         if (goodbyePattern.test(userMessage)) {
 
-            return res.json({
+    const reply =
+        "Goodbye! 👋 Good luck finding a CCA that's right for you!";
 
-              success: true,
+    await logToSheets(
+        userMessage,
+        reply,
+        "Goodbye"
+    );
 
-             response:
-                   "Goodbye! 👋 Good luck finding a CCA that's right for you!"
+    return res.json({
 
-            });
+        success: true,
 
-        }
+        response: reply
+
+    });
+
+}
 
 
         // ----------------------------------
@@ -899,16 +930,24 @@ app.post("/chat", async (req, res) => {
 
         if (helpPattern.test(userMessage)) {
 
-            return res.json({
+    const reply =
+        "I can help you explore Temasek Polytechnic CCAs! You can ask me about sports, clubs, societies, performing arts, training schedules, achievements, advisors, or ask me to recommend a CCA for you.";
 
-                success: true,
+    await logToSheets(
+        userMessage,
+        reply,
+        "Help"
+    );
 
-                response:
-                    "I can help you explore Temasek Polytechnic CCAs! You can ask me about sports, clubs, societies, performing arts, training schedules, achievements, advisors, or ask me to recommend a CCA for you."
+    return res.json({
 
-            });
+        success: true,
 
-        }
+        response: reply
+
+    });
+
+}
 
 
         // ----------------------------------
@@ -946,16 +985,23 @@ if (
         .map(item => `- ${item.cca.name}`)
         .join("\n");
 
-    return res.json({
-
-        success: true,
-
-        response:
+    const reply =
 `Temasek Polytechnic offers the following ${category}:
 
-${list}`
+${list}`;
 
-    });
+await logToSheets(
+    userMessage,
+    reply,
+    "Category Listing"
+);
+
+return res.json({
+
+    success: true,
+    response: reply
+
+});
 
 }
 
@@ -1013,14 +1059,22 @@ if (matches.length > 0) {
                 `Status: ${err?.status || "Unknown"}`
             );
 
-            return res.json({
+            const reply =
+    "Error: chatbot unavailable now. Please try again later or contact admin.";
 
-                success: false,
+await logToSheets(
+    userMessage,
+    reply,
+    "AI Failure"
+);
 
-                response:
-                    "Error: chatbot unavailable now. Please try again later or contact admin."
+return res.json({
 
-            });
+    success: false,
+
+    response: reply
+
+});
 
         }
 
@@ -1052,18 +1106,26 @@ if (matches.length > 0) {
 
     catch (err) {
 
-        console.error(err);
+    console.error(err);
 
-        res.json({
+    const reply =
+        "Error: unexpected server error.";
 
-            success: false,
+    await logToSheets(
+        userMessage || "(Unknown)",
+        reply,
+        "Server Error"
+    );
 
-            response:
-                "Error: unexpected server error."
+    res.json({
 
-        });
+        success: false,
 
-    }
+        response: reply
+
+    });
+
+}
 
 });
 
