@@ -341,6 +341,25 @@ const INTEREST_GROUPS = {
 };
 
 
+function isCategoryListing(query, category, shortCategory) {
+
+    const listingPatterns = [
+
+        new RegExp(`^${category}$`, "i"),
+        new RegExp(`^${shortCategory}$`, "i"),
+
+        new RegExp(
+            `^(show|list|display|give me|what|which|all)\\s+(the\\s+)?${shortCategory}(\\s+ccas?)?$`,
+            "i"
+        )
+
+    ];
+
+    return listingPatterns.some(pattern => pattern.test(query));
+
+}
+
+
 // ======================================================
 // SEARCH DATABASE
 // ======================================================
@@ -385,8 +404,11 @@ function searchCCA(userMessage) {
         const shortCategoryRegex = new RegExp(`\\b${shortCategory}\\b`, "i");
 
         if (
-            categoryRegex.test(query) ||
-            shortCategoryRegex.test(query)
+            (
+                categoryRegex.test(query) ||
+                shortCategoryRegex.test(query)
+            ) &&
+            isCategoryListing(query, cleanedCategory, shortCategory)
         ) {
 
             const matches = ccaDatabase
