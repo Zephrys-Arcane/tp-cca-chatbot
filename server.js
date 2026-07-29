@@ -767,7 +767,10 @@ async function logToSheets(query, response, model) {
 
     try {
 
-        await fetch(GOOGLE_SCRIPT_URL, {
+        console.log("📤 Sending log to Google Sheets...");
+        console.log("URL:", GOOGLE_SCRIPT_URL);
+
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
 
             method: "POST",
 
@@ -786,9 +789,16 @@ async function logToSheets(query, response, model) {
 
         });
 
+        console.log("Google Script status:", res.status);
+
+        const text = await res.text();
+
+        console.log("Google Script response:", text);
+
     } catch (err) {
 
-        console.log("Sheets logging failed (ignored)");
+        console.error("❌ Sheets logging failed:");
+        console.error(err);
 
     }
 
