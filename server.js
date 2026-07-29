@@ -345,11 +345,19 @@ function isCategoryListing(query, category, shortCategory) {
 
     const listingPatterns = [
 
+        // Exact category
         new RegExp(`^${category}$`, "i"),
         new RegExp(`^${shortCategory}$`, "i"),
 
+        // Show/List commands
         new RegExp(
-            `^(show|list|display|give me|what|which|all)\\s+(the\\s+)?${shortCategory}(\\s+ccas?)?$`,
+            `^(show|list|display)(\\s+me)?(\\s+the)?\\s+${shortCategory}(\\s+ccas?)?$`,
+            "i"
+        ),
+
+        // What/Which commands
+        new RegExp(
+            `^(what|which|all)(\\s+are)?(\\s+the)?\\s+${shortCategory}(\\s+ccas?)?$`,
             "i"
         )
 
@@ -900,17 +908,17 @@ app.post("/chat", async (req, res) => {
             const category = matches[0].cca.category;
 
             const list = matches
-                .map(item => `• ${item.cca.name}`)
+                .map(item => `- ${item.cca.name}`)
                 .join("\n");
 
             return res.json({
                 success: true,
-             response:
-        `Temasek Polytechnic offers the following ${category}:
+                response:
+            `Temasek Polytechnic offers the following ${category}:
 
-        ${list}`
-            });
-        }
+            ${list}`
+                });
+            }
 
         console.log(`📚 Retrieved ${matches.length} matching CCAs`);
 
