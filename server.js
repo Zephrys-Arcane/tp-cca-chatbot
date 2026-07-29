@@ -291,6 +291,55 @@ function normaliseArray(arr){
 
 }
 
+    
+const INTEREST_GROUPS = {
+
+    active: [
+        "soccer",
+        "basketball",
+        "dragon boat",
+        "volleyball",
+        "ultimate frisbee",
+        "badminton",
+        "rugby",
+        "track & field",
+        "kayak",
+        "sport climbing"
+    ],
+
+    creative: [
+        "band",
+        "music vox",
+        "chorale",
+        "theatro",
+        "dance",
+        "design"
+    ],
+
+    technology: [
+        "informatics",
+        "creative tech",
+        "engineering",
+        "robotics",
+        "coding"
+    ],
+
+    leadership: [
+        "lead ambassadors",
+        "students union",
+        "toastmasters",
+        "peer mentors"
+    ],
+
+    volunteering: [
+        "senvocates",
+        "lionhearters",
+        "peer supporters",
+        "red cross"
+    ]
+
+};
+
 
 // ======================================================
 // SEARCH DATABASE
@@ -301,6 +350,18 @@ function searchCCA(userMessage) {
     const query = clean(userMessage);
 
     const words = extractKeywords(userMessage);
+
+    const boostedKeywords = [];
+
+    for (const word of words) {
+
+        if (INTEREST_GROUPS[word]) {
+
+         boostedKeywords.push(...INTEREST_GROUPS[word]);
+
+        }
+
+    }
 
     // ==========================================
     // DYNAMIC CATEGORY DETECTION
@@ -398,6 +459,16 @@ function searchCCA(userMessage) {
 
                 if (field.includes(word))
                     score += 15;
+
+                for (const boost of boostedKeywords) {
+
+                    if (field.includes(boost)) {
+
+                        score += 120;
+
+                    }
+
+                }
 
             }
 
