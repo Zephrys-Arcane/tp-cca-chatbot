@@ -376,26 +376,18 @@ function searchCCA(userMessage) {
 
         const cleanedCategory = clean(category);
 
-        // User typed the full category
-        if (query.includes(cleanedCategory)) {
-
-            const matches = ccaDatabase
-                .filter(cca => clean(cca.category) === cleanedCategory)
-                .sort((a, b) => a.name.localeCompare(b.name));
-
-            return matches.map(cca => ({
-                score: 9999,
-                confidence: "CATEGORY MATCH",
-                cca
-            }));
-        }
-
         // User omitted the word "CCAs"
         const shortCategory = cleanedCategory
             .replace(" ccas", "")
             .trim();
 
-        if (query.includes(shortCategory)) {
+        const categoryRegex = new RegExp(`\\b${cleanedCategory}\\b`, "i");
+        const shortCategoryRegex = new RegExp(`\\b${shortCategory}\\b`, "i");
+
+        if (
+            categoryRegex.test(query) ||
+            shortCategoryRegex.test(query)
+        ) {
 
             const matches = ccaDatabase
                 .filter(cca => clean(cca.category) === cleanedCategory)
@@ -406,6 +398,7 @@ function searchCCA(userMessage) {
                 confidence: "CATEGORY MATCH",
                 cca
             }));
+
         }
 
     }
