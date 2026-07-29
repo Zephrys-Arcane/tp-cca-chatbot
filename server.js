@@ -886,6 +886,32 @@ app.post("/chat", async (req, res) => {
 
         const matches = searchCCA(userMessage);
 
+        // ----------------------------------
+        // Handle Category Listings
+        // ----------------------------------
+
+        if (
+            matches.length > 0 &&
+            matches[0].confidence === "CATEGORY MATCH"
+        ) {
+
+            console.log(`📚 Retrieved ${matches.length} CATEGORY MATCHES`);
+
+            const category = matches[0].cca.category;
+
+            const list = matches
+                .map(item => `• ${item.cca.name}`)
+                .join("\n");
+
+            return res.json({
+                success: true,
+             response:
+        `Temasek Polytechnic offers the following ${category}:
+
+        ${list}`
+            });
+        }
+
         console.log(`📚 Retrieved ${matches.length} matching CCAs`);
 
         if (matches.length > 0) {
