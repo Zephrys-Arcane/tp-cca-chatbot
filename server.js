@@ -16,6 +16,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Serve HTML, CSS and JS files
+app.use(express.static("."));
+
 
 // ======================================================
 // LOAD CCA DATABASE
