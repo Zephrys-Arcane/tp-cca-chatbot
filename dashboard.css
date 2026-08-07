@@ -126,7 +126,7 @@ body{
 
     font-size:30px;
 
-    color:#E31C23;
+    color:#2563eb;
 
 }
 
@@ -311,7 +311,7 @@ body{
 
     border-radius:8px;
 
-    background:#E31C23;
+    background:#2d6cdf;
 
     color:white;
 
@@ -325,7 +325,7 @@ body{
 
 .filterBtn:hover{
 
-    background:#C4161C;
+    background:#1d56bb;
 
     transform:translateY(-2px);
 
@@ -335,11 +335,11 @@ body{
 
 .filterBtn.active{
 
-    background:#A9151A;
+    background:#1e40af;
 
     transform:translateY(-2px);
 
-    box-shadow:0 6px 16px rgba(227,28,35,.35);
+    box-shadow:0 6px 16px rgba(37,99,235,.35);
 
 }
 
@@ -391,9 +391,9 @@ body{
 
     margin-left:auto;
 
-    background:#FFF3F3;
+    background:#eff6ff;
 
-    color:#A9151A;
+    color:#1d4ed8;
 
     padding:10px 18px;
 
@@ -403,7 +403,7 @@ body{
 
     font-weight:600;
 
-    border:1px solid #E31C23;
+    border:1px solid #bfdbfe;
 
 }
 
