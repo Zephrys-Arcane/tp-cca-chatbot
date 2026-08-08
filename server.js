@@ -962,6 +962,23 @@ app.post("/chat", async (req, res) => {
         // Search TP CCA Database
         // ----------------------------------
 
+        // ==========================================
+        // FOLLOW-UP QUESTION DETECTION
+        // ==========================================
+
+        const followUpPattern =
+            /\b(they|them|their|it|its|this cca|this club|this team|the club|the team|advisor|training|train|practice|practise|achievement|achievements|instagram)\b/i;
+
+        const isFollowUp = followUpPattern.test(userMessage);
+
+        if (isFollowUp && lastDiscussedCCA) {
+
+            console.log(
+                `🧠 Follow-up detected. Previous CCA: ${lastDiscussedCCA}`
+            );
+
+        }
+
         const matches = searchCCA(userMessage);
 
         // Remember the highest-ranked CCA
