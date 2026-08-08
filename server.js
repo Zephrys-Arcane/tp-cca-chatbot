@@ -67,12 +67,6 @@ const MODELS = [
 const MAX_SEARCH_RESULTS = 15;
 
 // ======================================================
-// CONVERSATION MEMORY
-// ======================================================
-
-let lastDiscussedCCA = null;
-
-// ======================================================
 // SYSTEM INSTRUCTION
 // ======================================================
 
@@ -661,6 +655,40 @@ ${conversationHistory || "No previous conversation."}
 
 ==================================================
 
+IMPORTANT CONVERSATION MEMORY RULES
+
+Use the conversation history to understand what the user is referring to.
+
+If the user's current question is a follow-up to an earlier message,
+use the previous conversation to resolve references such as:
+
+• they
+• them
+• their
+• it
+• this CCA
+• this club
+• this team
+• the above CCA
+• the same CCA
+
+For example:
+
+User: Tell me about Mind Sports.
+Assistant: [response about Mind Sports]
+User: When do they train?
+
+In this example, "they" refers to Mind Sports.
+
+Do NOT assume that the highest-ranked search result is the CCA
+the user is referring to.
+
+The search results are supporting information only.
+The conversation history should be used to determine the user's intent
+and the subject of a follow-up question.
+
+==================================================
+
 USER QUESTION
 
 ${userMessage}
@@ -962,33 +990,7 @@ app.post("/chat", async (req, res) => {
         // Search TP CCA Database
         // ----------------------------------
 
-        // ==========================================
-        // FOLLOW-UP QUESTION DETECTION
-        // ==========================================
-
-        const followUpPattern =
-            /\b(they|them|their|it|its|this cca|this club|this team|the club|the team|advisor|training|train|practice|practise|achievement|achievements|instagram)\b/i;
-
-        const isFollowUp = followUpPattern.test(userMessage);
-
-        if (isFollowUp && lastDiscussedCCA) {
-
-            console.log(
-                `🧠 Follow-up detected. Previous CCA: ${lastDiscussedCCA}`
-            );
-
-        }
-
         const matches = searchCCA(userMessage);
-
-        // Remember the highest-ranked CCA
-        if (matches.length > 0) {
-
-            lastDiscussedCCA = matches[0].cca.name;
-
-            console.log("🧠 Remembering:", lastDiscussedCCA);
-
-        }
 
 // ----------------------------------
 // Handle Category Listings
