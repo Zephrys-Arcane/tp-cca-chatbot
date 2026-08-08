@@ -378,9 +378,11 @@ function isCategoryListing(query, category, shortCategory) {
 
 function searchCCA(userMessage) {
 
-    const query = clean(userMessage);
+    const rawQuery = clean(userMessage);
 
     const words = extractKeywords(userMessage);
+
+    const query = words.join(" ");
 
     const boostedKeywords = [];
 
@@ -413,20 +415,20 @@ function searchCCA(userMessage) {
         // Only treat the query as a category listing
         // if the user is clearly asking to SEE/LIST the category.
         const isListingRequest =
-            query === cleanedCategory ||
-            query === shortCategory ||
-            query === `${shortCategory} ccas` ||
-            query === `show me ${shortCategory}` ||
-            query === `show me ${shortCategory} ccas` ||
-            query === `show ${shortCategory}` ||
-            query === `show ${shortCategory} ccas` ||
-            query === `list ${shortCategory}` ||
-            query === `list ${shortCategory} ccas` ||
-            query === `list all ${shortCategory}` ||
-            query === `list all ${shortCategory} ccas` ||
-            query === `what are the ${shortCategory} ccas` ||
-            query === `what ${shortCategory} ccas are there` ||
-            query === `which ${shortCategory} ccas are there`;
+            rawQuery === cleanedCategory ||
+            rawQuery === shortCategory ||
+            rawQuery === `${shortCategory} ccas` ||
+            rawQuery === `show me ${shortCategory}` ||
+            rawQuery === `show me ${shortCategory} ccas` ||
+            rawQuery === `show ${shortCategory}` ||
+            rawQuery === `show ${shortCategory} ccas` ||
+            rawQuery === `list ${shortCategory}` ||
+            rawQuery === `list ${shortCategory} ccas` ||
+            rawQuery === `list all ${shortCategory}` ||
+            rawQuery === `list all ${shortCategory} ccas` ||
+            rawQuery === `what are the ${shortCategory} ccas` ||
+            rawQuery === `what ${shortCategory} ccas are there` ||
+            rawQuery === `which ${shortCategory} ccas are there`;
 
         if (isListingRequest) {
 
@@ -452,7 +454,6 @@ function searchCCA(userMessage) {
     // NORMAL SEARCH
     // ==========================================
 
-    // Calculate a relevance score for every CCA
     const results = [];
 
     for (const cca of ccaDatabase) {
@@ -461,56 +462,153 @@ function searchCCA(userMessage) {
 
         const name = clean(cca.name);
 
-        if (name === query)
-            score += 1000;
+        const keywords = normaliseArray(cca.keywords);
+        const synonyms = normaliseArray(cca.synonyms);
+        const interests = normaliseArray(cca.interests);
 
-        else if (name.includes(query))
-            score += 400;
+        const description = clean(cca.description || "");
 
-        const fields = [
-
-            ...normaliseArray(cca.keywords),
-
-            ...normaliseArray(cca.synonyms),
-
-            ...normaliseArray(cca.interests),
-
-            clean(cca.description || "")
-
+        const allFields = [
+            ...keywords,
+            ...synonyms,
+            ...interests,
+            description
         ];
 
-        for (const field of fields) {
+        // ==========================================
+        // EXACT CCA NAME MATCH
+        // ==========================================
+
+        if (name === query) {
+
+            score += 1000;
+
+        }
+
+        // ==========================================
+        // CCA NAME CONTAINS FULL QUERY
+        // ==========================================
+
+        else if (name.includes(query)) {
+
+            score += 500;
+
+        }
+
+        // ==========================================
+        // EXACT KEYWORD / SYNONYM MATCH
+        // ==========================================
+
+        if (keywords.includes(query)) {
+
+            score += 300;
+
+        }
+
+        if (synonyms.includes(query)) {
+
+            score += 220;
+
+        }
+
+        if (interests.includes(query)) {
+
+            score += 180;
+
+        }
+
+        // ==========================================
+        // FULL PHRASE MATCH
+        // ==========================================
+
+        for (const field of allFields) {
 
             if (!field)
                 continue;
 
-            if (field === query)
-                score += 200;
+            if (field === query) {
 
-            else if (field.includes(query))
-                score += 80;
+                score += 250;
 
-            for (const word of words) {
+            }
 
-                if (word.length < 3)
+            else if (field.includes(query)) {
+
+                score += 100;
+
+            }
+
+        }
+
+        // ==========================================
+        // INDIVIDUAL WORD MATCHING
+        // ==========================================
+
+        for (const word of words) {
+
+            if (word.length < 3)
+                continue;
+
+            // Ignore very generic words when scoring
+            const genericWords = new Set([
+                "sports",
+                "sport",
+                "club",
+                "clubs",
+                "games",
+                "game",
+                "team",
+                "teams",
+                "cca",
+                "ccas",
+                "activity",
+                "activities"
+            ]);
+
+            const wordIsGeneric = genericWords.has(word);
+
+            for (const field of allFields) {
+
+                if (!field)
                     continue;
 
-                if (field.includes(word))
-                    score += 15;
+                if (field === word) {
 
-                for (const boost of boostedKeywords) {
+                    score += wordIsGeneric ? 5 : 25;
 
-                    if (field.includes(boost)) {
+                }
 
-                        score += 120;
+                else if (field.includes(word)) {
 
-                    }
+                    score += wordIsGeneric ? 3 : 12;
 
                 }
 
             }
 
         }
+
+        // ==========================================
+        // INTEREST GROUP BOOST
+        // ==========================================
+
+        for (const boost of boostedKeywords) {
+
+            for (const field of allFields) {
+
+                if (field.includes(boost)) {
+
+                    score += 80;
+
+                }
+
+            }
+
+        }
+
+        // ==========================================
+        // ADD RESULT
+        // ==========================================
 
         if (score > 0) {
 
@@ -519,10 +617,10 @@ function searchCCA(userMessage) {
             if (score >= 1000)
                 confidence = "VERY HIGH";
 
-            else if (score >= 300)
+            else if (score >= 500)
                 confidence = "HIGH";
 
-            else if (score >= 120)
+            else if (score >= 200)
                 confidence = "MEDIUM";
 
             results.push({
@@ -537,12 +635,15 @@ function searchCCA(userMessage) {
 
     }
 
-    // Highest relevance first
-results.sort((a, b) => b.score - a.score);
+    // ==========================================
+    // SORT RESULTS
+    // ==========================================
 
-return results.slice(0, MAX_SEARCH_RESULTS);
+    results.sort((a, b) => b.score - a.score);
 
-}
+    return results.slice(0, MAX_SEARCH_RESULTS);
+
+    }
 
 
 // ======================================================
