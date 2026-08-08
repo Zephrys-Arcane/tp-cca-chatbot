@@ -1173,6 +1173,16 @@ if (matches.length > 0) {
 
         try {
 
+            /// temporary///
+            console.log("\n🧠 GEMINI INPUT");
+            console.log("User Question:", userMessage);
+            console.log("\nConversation History:");
+            console.log(history);
+
+            console.log("\nRetrieved Context:");
+            console.log(context);
+            ///temporary///
+
             const result = await callModel(
                 userMessage,
                 context,
