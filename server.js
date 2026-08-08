@@ -66,6 +66,11 @@ const MODELS = [
 ];
 const MAX_SEARCH_RESULTS = 15;
 
+// ======================================================
+// CONVERSATION MEMORY
+// ======================================================
+
+let lastDiscussedCCA = null;
 
 // ======================================================
 // SYSTEM INSTRUCTION
@@ -958,6 +963,15 @@ app.post("/chat", async (req, res) => {
         // ----------------------------------
 
         const matches = searchCCA(userMessage);
+
+        // Remember the highest-ranked CCA
+        if (matches.length > 0) {
+
+            lastDiscussedCCA = matches[0].cca.name;
+
+            console.log("🧠 Remembering:", lastDiscussedCCA);
+
+        }
 
 // ----------------------------------
 // Handle Category Listings
