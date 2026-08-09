@@ -463,127 +463,6 @@ const INTEREST_GROUPS = {
 };
 
 
-function isCategoryListing(query, category, shortCategory) {
-
-    const q = clean(query);
-    const cat = clean(category);
-    const shortCat = clean(shortCategory);
-
-    // ==========================================
-    // CATEGORY ALIASES
-    // ==========================================
-
-    const categoryAliases = {
-
-        "sports ccas": [
-            "sports",
-            "sport",
-            "sports ccas",
-            "sport ccas"
-        ],
-
-        "performing arts ccas": [
-            "performing arts",
-            "performing art",
-            "performing arts ccas",
-            "performing art ccas"
-        ],
-
-        "interest groups": [
-            "interest groups",
-            "interest group"
-        ],
-
-        "p10 clubs": [
-            "p10",
-            "p10 clubs",
-            "p10 club"
-        ]
-
-    };
-
-    const aliases = categoryAliases[cat] || [
-        cat,
-        shortCat
-    ];
-
-    // ==========================================
-    // DIRECT CATEGORY REQUEST
-    // ==========================================
-
-    if (aliases.includes(q)) {
-        return true;
-    }
-
-    // ==========================================
-    // SHOW / LIST / DISPLAY
-    // ==========================================
-
-    for (const alias of aliases) {
-
-        if (
-            q === `show ${alias}` ||
-            q === `show me ${alias}` ||
-            q === `show the ${alias}` ||
-            q === `show me the ${alias}` ||
-
-            q === `list ${alias}` ||
-            q === `list all ${alias}` ||
-            q === `list the ${alias}` ||
-            q === `list all the ${alias}` ||
-
-            q === `display ${alias}` ||
-            q === `display all ${alias}`
-        ) {
-            return true;
-        }
-    }
-
-    // ==========================================
-    // "WHAT / WHICH" CATEGORY QUESTIONS
-    // ==========================================
-
-    for (const alias of aliases) {
-
-        if (
-            q === `what ${alias} are available` ||
-            q === `what ${alias} are there` ||
-            q === `what are the ${alias}` ||
-            q === `what are the ${alias} available` ||
-            q === `what are the ${alias} there` ||
-
-            q === `which ${alias} are available` ||
-            q === `which ${alias} are there` ||
-            q === `which are the ${alias}` ||
-
-            q === `what ${alias} can i join` ||
-            q === `which ${alias} can i join`
-        ) {
-            return true;
-        }
-    }
-
-    // ==========================================
-    // "SHOW ME CCAS RELATED TO X"
-    // ==========================================
-
-    for (const alias of aliases) {
-
-        if (
-            q === `show me ccas related to ${alias}` ||
-            q === `show ccas related to ${alias}` ||
-            q === `list ccas related to ${alias}` ||
-            q === `what ccas are related to ${alias}` ||
-            q === `which ccas are related to ${alias}`
-        ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
 // ======================================================
 // SEARCH DATABASE
 // ======================================================
@@ -591,6 +470,97 @@ function isCategoryListing(query, category, shortCategory) {
 function searchCCA(userMessage) {
 
     const rawQuery = clean(userMessage);
+
+        // ==========================================
+        // CATEGORY LISTING DETECTION
+        // ==========================================
+
+        const categoryAliases = {
+            "sports ccas": [
+                "sports",
+                "sport",
+                "sports ccas",
+                "sport ccas"
+            ],
+
+            "performing arts ccas": [
+                "performing arts",
+                "performing art",
+                "performing arts ccas",
+                "performing art ccas"
+            ],
+
+            "interest groups": [
+                "interest group",
+                "interest groups"
+            ],
+
+            "p10 clubs": [
+                "p10",
+                "p10 club",
+                "p10 clubs"
+            ]
+        };
+
+        for (const [category, aliases] of Object.entries(categoryAliases)) {
+
+            for (const alias of aliases) {
+
+                const categoryRequest =
+                    rawQuery === alias ||
+
+                    rawQuery === `what ${alias} are available` ||
+                    rawQuery === `what ${alias} are there` ||
+
+                    rawQuery === `what are the ${alias}` ||
+                    rawQuery === `what are the ${alias} available` ||
+
+                    rawQuery === `which ${alias} are available` ||
+                    rawQuery === `which ${alias} are there` ||
+                    rawQuery === `which are the ${alias}` ||
+                    rawQuery === `which ccas are ${alias}` ||
+
+                    rawQuery === `what ${alias} can i join` ||
+                    rawQuery === `which ${alias} can i join` ||
+
+                    rawQuery === `list ${alias}` ||
+                    rawQuery === `list all ${alias}` ||
+                    rawQuery === `list the ${alias}` ||
+                    rawQuery === `list all the ${alias}` ||
+
+                    rawQuery === `show ${alias}` ||
+                    rawQuery === `show me ${alias}` ||
+                    rawQuery === `show the ${alias}` ||
+                    rawQuery === `show me the ${alias}` ||
+
+                    rawQuery === `show me ccas related to ${alias}` ||
+                    rawQuery === `show ccas related to ${alias}` ||
+                    rawQuery === `list ccas related to ${alias}` ||
+                    rawQuery === `what ccas are related to ${alias}` ||
+                    rawQuery === `which ccas are related to ${alias}`;
+
+                if (categoryRequest) {
+
+                    const matches = ccaDatabase
+                        .filter(cca =>
+                            clean(cca.category) === clean(category)
+                        )
+                        .sort((a, b) =>
+                            a.name.localeCompare(b.name)
+                        );
+
+                    console.log(
+                        `📚 CATEGORY MATCH: ${category} → ${matches.length} CCAs`
+                    );
+
+                    return matches.map(cca => ({
+                        score: 9999,
+                        confidence: "CATEGORY MATCH",
+                        cca
+                    }));
+                }
+            }
+        }
 
     // ==========================================
     // EXACT CCA NAME DETECTION
@@ -628,60 +598,6 @@ function searchCCA(userMessage) {
         if (INTEREST_GROUPS[word]) {
 
          boostedKeywords.push(...INTEREST_GROUPS[word]);
-
-        }
-
-    }
-
-    // ==========================================
-    // DYNAMIC CATEGORY DETECTION
-    // ==========================================
-
-    const categories = [...new Set(
-        ccaDatabase.map(cca => cca.category)
-    )];
-
-    for (const category of categories) {
-
-        const cleanedCategory = clean(category);
-
-        const shortCategory = cleanedCategory
-            .replace(" ccas", "")
-            .trim();
-
-        // Only treat the query as a category listing
-        // if the user is clearly asking to SEE/LIST the category.
-        const isListingRequest =
-            rawQuery === cleanedCategory ||
-            rawQuery === shortCategory ||
-            rawQuery === `${shortCategory} ccas` ||
-            rawQuery === `show me ${shortCategory}` ||
-            rawQuery === `show me ${shortCategory} ccas` ||
-            rawQuery === `show ${shortCategory}` ||
-            rawQuery === `show ${shortCategory} ccas` ||
-            rawQuery === `list ${shortCategory}` ||
-            rawQuery === `list ${shortCategory} ccas` ||
-            rawQuery === `list all ${shortCategory}` ||
-            rawQuery === `list all ${shortCategory} ccas` ||
-            rawQuery === `what are the ${shortCategory} ccas` ||
-            rawQuery === `what ${shortCategory} ccas are there` ||
-            rawQuery === `which ${shortCategory} ccas are there`;
-
-        if (isListingRequest) {
-
-            const matches = ccaDatabase
-                .filter(cca =>
-                    clean(cca.category) === cleanedCategory
-                )
-                .sort((a, b) =>
-                    a.name.localeCompare(b.name)
-                );
-
-            return matches.map(cca => ({
-                score: 9999,
-                confidence: "CATEGORY MATCH",
-                cca
-            }));
 
         }
 
