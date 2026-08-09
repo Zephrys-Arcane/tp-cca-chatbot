@@ -281,6 +281,104 @@ function extractKeywords(text) {
 
 
 // ======================================================
+// RESOLVE FOLLOW-UP SEARCH QUERIES
+// ======================================================
+
+function resolveSearchQuery(userMessage, history) {
+
+    const rawQuery = clean(userMessage);
+
+    // No history → search normally
+    if (!history || history.length === 0) {
+        return userMessage;
+    }
+
+    // Words/phrases that usually indicate a follow-up question
+    const followUpPatterns = [
+        "they",
+        "them",
+        "their",
+        "it",
+        "this cca",
+        "this club",
+        "this team",
+        "this group",
+        "the above cca",
+        "the same cca",
+        "the above club",
+        "the same club",
+        "the above team",
+        "the same team"
+    ];
+
+    const isFollowUp = followUpPatterns.some(pattern =>
+        rawQuery.includes(pattern)
+    );
+
+    if (!isFollowUp) {
+        return userMessage;
+    }
+
+    // Find the most recent assistant response
+    // and previous user messages.
+    const recentHistory = history.slice(-10);
+
+    // Try to identify a CCA mentioned in the conversation.
+    let referencedCCA = null;
+
+    // Search newest messages first
+    for (let i = recentHistory.length - 1; i >= 0; i--) {
+
+        const message = recentHistory[i];
+
+        if (!message?.content)
+            continue;
+
+        const messageText = clean(message.content);
+
+        // Check database CCA names against the conversation
+        for (const cca of ccaDatabase) {
+
+            const ccaName = clean(cca.name);
+
+            if (
+                messageText.includes(ccaName)
+            ) {
+
+                referencedCCA = cca.name;
+                break;
+
+            }
+
+        }
+
+        if (referencedCCA)
+            break;
+    }
+
+    // If we could not identify a CCA,
+    // keep the original query.
+    if (!referencedCCA) {
+        return userMessage;
+    }
+
+    // Add the identified CCA to the search query.
+    const resolvedQuery =
+        `${referencedCCA} ${userMessage}`;
+
+    console.log(
+        `🔎 Follow-up detected: "${userMessage}"`
+    );
+
+    console.log(
+        `🎯 Resolved search query: "${resolvedQuery}"`
+    );
+
+    return resolvedQuery;
+}
+
+
+// ======================================================
 // NORMALISE ARRAYS
 // ======================================================
 
@@ -1091,7 +1189,14 @@ app.post("/chat", async (req, res) => {
         // Search TP CCA Database
         // ----------------------------------
 
-        const matches = searchCCA(userMessage);
+        const searchQuery = resolveSearchQuery(
+            userMessage,
+            history
+        );
+
+        console.log(`🔍 Search Query: ${searchQuery}`);
+
+        const matches = searchCCA(searchQuery);
 
 // ----------------------------------
 // Handle Category Listings
@@ -1172,16 +1277,6 @@ if (matches.length > 0) {
         let modelUsed;
 
         try {
-
-            /// temporary///
-            console.log("\n🧠 GEMINI INPUT");
-            console.log("User Question:", userMessage);
-            console.log("\nConversation History:");
-            console.log(history);
-
-            console.log("\nRetrieved Context:");
-            console.log(context);
-            ///temporary///
 
             const result = await callModel(
                 userMessage,
