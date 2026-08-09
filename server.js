@@ -363,15 +363,14 @@ function resolveSearchQuery(userMessage, history) {
     }
 
     // Add the identified CCA to the search query.
-    const resolvedQuery =
-        `${referencedCCA} ${userMessage}`;
+    const resolvedQuery = referencedCCA;
 
     console.log(
         `🔎 Follow-up detected: "${userMessage}"`
     );
 
     console.log(
-        `🎯 Resolved search query: "${resolvedQuery}"`
+        `🎯 Resolved CCA: "${resolvedQuery}"`
     );
 
     return resolvedQuery;
