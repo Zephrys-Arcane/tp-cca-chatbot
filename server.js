@@ -577,7 +577,14 @@ function searchCCA(userMessage) {
 
     });
 
-    if (exactCCA) {
+    // Check whether this is asking for similar / other CCAs.
+    // Similar-CCA questions should NOT return only the exact CCA.
+    const similarCCARequest =
+        /\b(similar|similar to|like|other ccAs|other cca|alternative|alternatives)\b/i.test(
+            rawQuery
+        );
+
+    if (exactCCA && !similarCCARequest) {
 
         return [{
             score: 9999,
