@@ -497,6 +497,31 @@ function searchCCA(userMessage) {
 
     const rawQuery = clean(userMessage);
 
+    // ==========================================
+    // EXACT CCA NAME DETECTION
+    // ==========================================
+
+    const exactCCA = ccaDatabase.find(cca => {
+
+        const ccaName = clean(cca.name);
+
+        return (
+            rawQuery === ccaName ||
+            rawQuery.includes(ccaName)
+        );
+
+    });
+
+    if (exactCCA) {
+
+        return [{
+            score: 9999,
+            confidence: "VERY HIGH",
+            cca: exactCCA
+        }];
+
+    }
+
     const words = extractKeywords(userMessage);
 
     const query = words.join(" ");
