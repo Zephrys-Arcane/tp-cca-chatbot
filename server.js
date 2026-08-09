@@ -311,6 +311,26 @@ function resolveSearchQuery(userMessage, history) {
         "the same team"
     ];
 
+    // Check whether the user explicitly mentions a CCA.
+    // If they do, this is a new CCA search, not a follow-up.
+    const explicitlyMentionedCCA = ccaDatabase.find(cca => {
+
+        const ccaName = clean(cca.name);
+
+        return rawQuery.includes(ccaName);
+
+    });
+
+    if (explicitlyMentionedCCA) {
+
+        console.log(
+            `🆕 New CCA explicitly mentioned: "${explicitlyMentionedCCA.name}"`
+        );
+
+        return userMessage;
+
+    }
+
     const isFollowUp = followUpPatterns.some(pattern =>
         rawQuery.includes(pattern)
     );
