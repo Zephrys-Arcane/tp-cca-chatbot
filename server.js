@@ -465,28 +465,122 @@ const INTEREST_GROUPS = {
 
 function isCategoryListing(query, category, shortCategory) {
 
-    const listingPatterns = [
+    const q = clean(query);
+    const cat = clean(category);
+    const shortCat = clean(shortCategory);
 
-        // Exact category
-        new RegExp(`^${category}$`, "i"),
-        new RegExp(`^${shortCategory}$`, "i"),
+    // ==========================================
+    // CATEGORY ALIASES
+    // ==========================================
 
-        // Show/List commands
-        new RegExp(
-            `^(show|list|display)(\\s+me)?(\\s+the)?\\s+${shortCategory}(\\s+ccas?)?$`,
-            "i"
-        ),
+    const categoryAliases = {
 
-        // What/Which commands
-        new RegExp(
-            `^(what|which|all)(\\s+are)?(\\s+the)?\\s+${shortCategory}(\\s+ccas?)?$`,
-            "i"
-        )
+        "sports ccas": [
+            "sports",
+            "sport",
+            "sports ccas",
+            "sport ccas"
+        ],
 
+        "performing arts ccas": [
+            "performing arts",
+            "performing art",
+            "performing arts ccas",
+            "performing art ccas"
+        ],
+
+        "interest groups": [
+            "interest groups",
+            "interest group"
+        ],
+
+        "p10 clubs": [
+            "p10",
+            "p10 clubs",
+            "p10 club"
+        ]
+
+    };
+
+    const aliases = categoryAliases[cat] || [
+        cat,
+        shortCat
     ];
 
-    return listingPatterns.some(pattern => pattern.test(query));
+    // ==========================================
+    // DIRECT CATEGORY REQUEST
+    // ==========================================
 
+    if (aliases.includes(q)) {
+        return true;
+    }
+
+    // ==========================================
+    // SHOW / LIST / DISPLAY
+    // ==========================================
+
+    for (const alias of aliases) {
+
+        if (
+            q === `show ${alias}` ||
+            q === `show me ${alias}` ||
+            q === `show the ${alias}` ||
+            q === `show me the ${alias}` ||
+
+            q === `list ${alias}` ||
+            q === `list all ${alias}` ||
+            q === `list the ${alias}` ||
+            q === `list all the ${alias}` ||
+
+            q === `display ${alias}` ||
+            q === `display all ${alias}`
+        ) {
+            return true;
+        }
+    }
+
+    // ==========================================
+    // "WHAT / WHICH" CATEGORY QUESTIONS
+    // ==========================================
+
+    for (const alias of aliases) {
+
+        if (
+            q === `what ${alias} are available` ||
+            q === `what ${alias} are there` ||
+            q === `what are the ${alias}` ||
+            q === `what are the ${alias} available` ||
+            q === `what are the ${alias} there` ||
+
+            q === `which ${alias} are available` ||
+            q === `which ${alias} are there` ||
+            q === `which are the ${alias}` ||
+
+            q === `what ${alias} can i join` ||
+            q === `which ${alias} can i join`
+        ) {
+            return true;
+        }
+    }
+
+    // ==========================================
+    // "SHOW ME CCAS RELATED TO X"
+    // ==========================================
+
+    for (const alias of aliases) {
+
+        if (
+            q === `show me ccas related to ${alias}` ||
+            q === `show ccas related to ${alias}` ||
+            q === `list ccas related to ${alias}` ||
+            q === `what ccas are related to ${alias}` ||
+            q === `which ccas are related to ${alias}`
+        ) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
