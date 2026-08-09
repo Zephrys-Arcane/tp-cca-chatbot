@@ -343,20 +343,21 @@ function resolveSearchQuery(userMessage, history) {
     // and previous user messages.
     const recentHistory = history.slice(-10);
 
-    // Try to identify a CCA mentioned in the conversation.
+    // Try to identify a CCA mentioned in USER messages only.
     let referencedCCA = null;
 
-    // Search newest messages first
+    // Search newest user messages first
     for (let i = recentHistory.length - 1; i >= 0; i--) {
 
         const message = recentHistory[i];
 
-        if (!message?.content)
+        // Ignore Gemini/assistant messages completely
+        if (!message?.content || message.role !== "user")
             continue;
 
         const messageText = clean(message.content);
 
-        // Check database CCA names against the conversation
+        // Check database CCA names against USER messages only
         for (const cca of ccaDatabase) {
 
             const ccaName = clean(cca.name);
