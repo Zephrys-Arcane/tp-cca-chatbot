@@ -995,7 +995,7 @@ if (isSimilarRequest && exactCCA) {
 
     // If the user is asking for similar / other CCAs,
     // remove the CCA they are already asking about.
-    if (similarCCARequest && exactCCA) {
+    if (isSimilarRequest && exactCCA) {
 
         const filteredResults = results.filter(
             result => result.cca.name !== exactCCA.name
@@ -1824,7 +1824,7 @@ return res.json({
         "Error: unexpected server error.";
 
     await logToSheets(
-        userMessage || "(Unknown)",
+        req.body?.message || "(Unknown)",
         reply,
         "Server Error"
     );
