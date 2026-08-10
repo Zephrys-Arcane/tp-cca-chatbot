@@ -1824,7 +1824,7 @@ return res.json({
         "Error: unexpected server error.";
 
     await logToSheets(
-        req.body?.message || "(Unknown)",
+        userMessage || "(Unknown)",
         reply,
         "Server Error"
     );
