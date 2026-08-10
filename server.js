@@ -279,6 +279,28 @@ function extractKeywords(text) {
 
 }
 
+function isRecommendationRequest(text) {
+
+    if (!text)
+        return false;
+
+    const query = clean(text);
+
+    return (
+        /\brecommend\b/.test(query) ||
+        /\brecommendation\b/.test(query) ||
+        /\bsuggest\b/.test(query) ||
+        /\bwhat cca should i join\b/.test(query) ||
+        /\bwhich cca should i join\b/.test(query) ||
+        /\bwhat cca can i join\b/.test(query) ||
+        /\bwhich cca can i join\b/.test(query) ||
+        /\bwhat ccas should i join\b/.test(query) ||
+        /\bwhich ccas should i join\b/.test(query) ||
+        /\bwhat ccas would you recommend\b/.test(query) ||
+        /\bwhat cca would you recommend\b/.test(query)
+    );
+}
+
 
 // ======================================================
 // NEGATIVE PREFERENCE DETECTION
@@ -305,22 +327,33 @@ function detectNegativePreferences(text) {
     if (!text)
         return preferences;
 
-    for (const pattern of NEGATIVE_PATTERNS) {
+    const patterns = [
+        /\bi don't like\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bi do not like\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bi dislike\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bi hate\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bi don't want\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bi do not want\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bnot interested in\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bexclude\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bwithout\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bbut not\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi,
+        /\bexcept\s+(.+?)(?=\s+and\s+i\s+(?:don't like|do not like|hate|dislike)|[.!?,]|$)/gi
+    ];
 
-        const match = text.match(pattern);
+    for (const pattern of patterns) {
 
-        if (!match)
-            continue;
+        let match;
 
-        let value = match[1]
-            .toLowerCase()
-            .trim();
+        while ((match = pattern.exec(text)) !== null) {
 
-        if (!value)
-            continue;
+            let value = match[1]
+                .trim()
+                .replace(/\s+/g, " ");
 
-        preferences.push(value);
-
+            if (value)
+                preferences.push(value);
+        }
     }
 
     return preferences;
@@ -657,6 +690,36 @@ const INTEREST_GROUPS = {
 
 };
 
+function searchForRecommendation(negativePreferences = []) {
+
+    let results = [];
+
+    for (const cca of ccaDatabase) {
+
+        // Exclude anything the user explicitly dislikes
+        if (
+            matchesNegativePreference(
+                cca,
+                negativePreferences
+            )
+        ) {
+
+            console.log(
+                `🚫 Excluded CCA: ${cca.name}`
+            );
+
+            continue;
+        }
+
+        results.push({
+            score: 1,
+            confidence: "RECOMMENDATION",
+            cca
+        });
+    }
+
+    return results;
+}
 
 // ======================================================
 // SEARCH DATABASE
@@ -1849,13 +1912,27 @@ app.post("/chat", async (req, res) => {
             history
         );
 
-        console.log(`🔍 Search Query: ${searchResult.query}`);
+        const recommendationRequest =
+            isRecommendationRequest(userMessage);
 
-        let matches = searchCCA(
+        console.log(
+            `🎯 Recommendation request: ${recommendationRequest}`
+        );
+
+        console.log(
+            `🔍 Search Query: ${searchResult.query}`
+        );
+
+        let matches;
+
+        console.log("🔎 Running normal CCA search");
+
+        matches = searchCCA(
             searchResult.query,
             searchResult.isSimilarRequest
         );
 
+        // Remove CCAs that match the user's negative preferences
         matches = filterNegativePreferences(
             matches,
             negativePreferences
