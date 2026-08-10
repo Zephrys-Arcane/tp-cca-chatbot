@@ -355,6 +355,107 @@ function normalizeNegativePreference(value) {
     return aliases[cleaned] || [cleaned];
 }
 
+function getConversationNegativePreferences(userMessage, history) {
+
+    const allPreferences = [];
+
+    // Current message
+    allPreferences.push(
+        ...detectNegativePreferences(userMessage)
+    );
+
+    // Previous user messages
+    if (Array.isArray(history)) {
+
+        for (const message of history) {
+
+            if (!message || message.role !== "user")
+                continue;
+
+            allPreferences.push(
+                ...detectNegativePreferences(message.content)
+            );
+
+        }
+
+    }
+
+    // Normalise everything
+    const normalised = allPreferences
+        .flatMap(normalizeNegativePreference)
+        .filter(Boolean);
+
+    // Remove duplicates
+    return [...new Set(normalised)];
+
+}
+
+
+// ======================================================
+// CHECK WHETHER A CCA MATCHES A NEGATIVE PREFERENCE
+// ======================================================
+
+function matchesNegativePreference(cca, negativePreferences) {
+
+    const fields = [
+
+        cca.name,
+        cca.category,
+        cca.description,
+
+        ...(Array.isArray(cca.keywords)
+            ? cca.keywords
+            : []),
+
+        ...(Array.isArray(cca.synonyms)
+            ? cca.synonyms
+            : []),
+
+        ...(Array.isArray(cca.interests)
+            ? cca.interests
+            : [])
+
+    ]
+        .filter(Boolean)
+        .map(clean);
+
+    return negativePreferences.some(preference => {
+
+        return fields.some(field =>
+            field.includes(preference)
+        );
+
+    });
+
+}
+
+function filterNegativePreferences(matches, negativePreferences) {
+
+    if (!negativePreferences.length)
+        return matches;
+
+    return matches.filter(item => {
+
+        const excluded =
+            matchesNegativePreference(
+                item.cca,
+                negativePreferences
+            );
+
+        if (excluded) {
+
+            console.log(
+                `🚫 Excluded CCA: ${item.cca.name}`
+            );
+
+        }
+
+        return !excluded;
+
+    });
+
+}
+
 
 // ======================================================
 // RESOLVE FOLLOW-UP SEARCH QUERIES
@@ -1619,16 +1720,16 @@ app.post("/chat", async (req, res) => {
         console.log("\n========================================");
         console.log("👤 User:", userMessage);
 
-        //temporary
-        const testNegative =
-            detectNegativePreferences(userMessage)
-                .flatMap(normalizeNegativePreference);
+        const negativePreferences =
+            getConversationNegativePreferences(
+                userMessage,
+                history
+            );
 
         console.log(
             "🚫 Negative preferences:",
-            testNegative
+            negativePreferences
         );
-        //temporary
 
         // ----------------------------------
         // Handle Casual Greetings
@@ -1750,10 +1851,38 @@ app.post("/chat", async (req, res) => {
 
         console.log(`🔍 Search Query: ${searchResult.query}`);
 
-        const matches = searchCCA(
+        let matches = searchCCA(
             searchResult.query,
             searchResult.isSimilarRequest
         );
+
+        matches = filterNegativePreferences(
+            matches,
+            negativePreferences
+        );
+
+        if (
+            matches.length === 0 &&
+            negativePreferences.length > 0
+        ) {
+
+            const reply =
+                "I couldn't find any TP CCAs that match your request while excluding your preferences. Try relaxing one of your preferences.";
+
+            await logToSheets(
+                userMessage,
+                reply,
+                "Negative Preference - No Results"
+            );
+
+            return res.json({
+
+                success: true,
+                response: reply
+
+            });
+
+        }
 
 // ----------------------------------
 // Handle Category Listings
