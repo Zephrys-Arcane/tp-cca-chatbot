@@ -383,19 +383,51 @@ function resolveSearchQuery(userMessage, history) {
         return userMessage;
     }
 
-    // Add the identified CCA to the search query.
-    const resolvedQuery = referencedCCA;
+    // ==========================================
+    // DETECT SIMILAR-CCA FOLLOW-UP
+    // ==========================================
+
+    const similarCCARequest =
+        /\b(similar|like|other cca|other ccas|alternative|alternatives)\b/i.test(
+            rawQuery
+        );
+
+    // ==========================================
+    // RESOLVE QUERY
+    // ==========================================
+
+    let resolvedQuery;
+
+    if (similarCCARequest) {
+
+        // Preserve the user's similarity intent
+        // while replacing "it / this CCA / etc." with
+        // the actual CCA name.
+
+        resolvedQuery =
+            `${referencedCCA} similar CCAs`;
+
+    } else {
+
+        // Normal follow-up
+        resolvedQuery = referencedCCA;
+
+    }
 
     console.log(
         `🔎 Follow-up detected: "${userMessage}"`
     );
 
     console.log(
-        `🎯 Resolved CCA: "${resolvedQuery}"`
+        `🎯 Resolved CCA: "${referencedCCA}"`
+    );
+
+    console.log(
+        `🔍 Search Query: ${resolvedQuery}`
     );
 
     return resolvedQuery;
-}
+    }
 
 
 // ======================================================
