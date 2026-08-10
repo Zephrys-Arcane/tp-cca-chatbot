@@ -597,7 +597,7 @@ function searchCCA(userMessage, isSimilarRequest = false) {
 
     // Check whether this is asking for similar / other CCAs.
     // Similar-CCA questions should NOT return only the exact CCA.
-    if (exactCCA && !similarCCARequest) {
+    if (exactCCA && !isSimilarRequest) {
 
     return [{
         score: 9999,
