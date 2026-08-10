@@ -746,10 +746,13 @@ if (isSimilarRequest && exactCCA) {
 
             let confidence = "LOW";
 
-            if (score >= 150)
+            if (score >= 1000)
+                confidence = "VERY HIGH";
+
+            else if (score >= 700)
                 confidence = "HIGH";
 
-            else if (score >= 80)
+            else if (score >= 400)
                 confidence = "MEDIUM";
 
             similarityResults.push({
