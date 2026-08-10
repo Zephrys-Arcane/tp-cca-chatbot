@@ -586,13 +586,185 @@ function searchCCA(userMessage) {
 
     if (exactCCA && !similarCCARequest) {
 
-        return [{
-            score: 9999,
-            confidence: "VERY HIGH",
-            cca: exactCCA
-        }];
+    return [{
+        score: 9999,
+        confidence: "VERY HIGH",
+        cca: exactCCA
+    }];
+
+}
+
+// ==========================================
+// SIMILAR CCA SEARCH
+// ==========================================
+
+if (similarCCARequest && exactCCA) {
+
+    const targetKeywords =
+        normaliseArray(exactCCA.keywords);
+
+    const targetSynonyms =
+        normaliseArray(exactCCA.synonyms);
+
+    const targetInterests =
+        normaliseArray(exactCCA.interests);
+
+    const targetCategory =
+        clean(exactCCA.category || "");
+
+    const similarityResults = [];
+
+    for (const cca of ccaDatabase) {
+
+        // Never recommend the CCA itself
+        if (cca.name === exactCCA.name)
+            continue;
+
+        let score = 0;
+
+        const keywords =
+            normaliseArray(cca.keywords);
+
+        const synonyms =
+            normaliseArray(cca.synonyms);
+
+        const interests =
+            normaliseArray(cca.interests);
+
+        const category =
+            clean(cca.category || "");
+
+        // ==========================================
+        // CATEGORY MATCH
+        // ==========================================
+
+        if (
+            targetCategory &&
+            category === targetCategory
+        ) {
+
+            score += 100;
+
+        }
+
+        // ==========================================
+        // KEYWORD OVERLAP
+        // ==========================================
+
+        for (const keyword of targetKeywords) {
+
+            if (keywords.includes(keyword)) {
+
+                score += 30;
+
+            }
+
+            if (synonyms.includes(keyword)) {
+
+                score += 20;
+
+            }
+
+            if (interests.includes(keyword)) {
+
+                score += 20;
+
+            }
+
+        }
+
+        // ==========================================
+        // SYNONYM OVERLAP
+        // ==========================================
+
+        for (const synonym of targetSynonyms) {
+
+            if (keywords.includes(synonym)) {
+
+                score += 25;
+
+            }
+
+            if (synonyms.includes(synonym)) {
+
+                score += 15;
+
+            }
+
+            if (interests.includes(synonym)) {
+
+                score += 15;
+
+            }
+
+        }
+
+        // ==========================================
+        // INTEREST OVERLAP
+        // ==========================================
+
+        for (const interest of targetInterests) {
+
+            if (keywords.includes(interest)) {
+
+                score += 25;
+
+            }
+
+            if (synonyms.includes(interest)) {
+
+                score += 15;
+
+            }
+
+            if (interests.includes(interest)) {
+
+                score += 20;
+
+            }
+
+        }
+
+        // ==========================================
+        // ADD RESULT
+        // ==========================================
+
+        if (score > 0) {
+
+            let confidence = "LOW";
+
+            if (score >= 150)
+                confidence = "HIGH";
+
+            else if (score >= 80)
+                confidence = "MEDIUM";
+
+            similarityResults.push({
+
+                score,
+                confidence,
+                cca
+
+            });
+
+        }
 
     }
+
+    // ==========================================
+    // SORT SIMILAR CCAs
+    // ==========================================
+
+    similarityResults.sort(
+        (a, b) => b.score - a.score
+    );
+
+    return similarityResults.slice(
+        0,
+        MAX_SEARCH_RESULTS
+    );
+
+}
 
     const words = extractKeywords(userMessage);
 
@@ -800,6 +972,21 @@ function searchCCA(userMessage) {
     // ==========================================
 
     results.sort((a, b) => b.score - a.score);
+
+    // ==========================================
+    // SIMILAR CCA RESULTS
+    // ==========================================
+
+    // If the user is asking for similar / other CCAs,
+    // remove the CCA they are already asking about.
+    if (similarCCARequest && exactCCA) {
+
+        const filteredResults = results.filter(
+            result => result.cca.name !== exactCCA.name
+        );
+
+        return filteredResults.slice(0, MAX_SEARCH_RESULTS);
+    }
 
     return results.slice(0, MAX_SEARCH_RESULTS);
 
