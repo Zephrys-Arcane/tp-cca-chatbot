@@ -281,6 +281,82 @@ function extractKeywords(text) {
 
 
 // ======================================================
+// NEGATIVE PREFERENCE DETECTION
+// ======================================================
+
+const NEGATIVE_PATTERNS = [
+    /\bi don't like ([^.!?,]+)/i,
+    /\bi do not like ([^.!?,]+)/i,
+    /\bi dislike ([^.!?,]+)/i,
+    /\bi hate ([^.!?,]+)/i,
+    /\bi don't want ([^.!?,]+)/i,
+    /\bi do not want ([^.!?,]+)/i,
+    /\bnot interested in ([^.!?,]+)/i,
+    /\bexclude ([^.!?,]+)/i,
+    /\bwithout ([^.!?,]+)/i,
+    /\bbut not ([^.!?,]+)/i,
+    /\bexcept ([^.!?,]+)/i
+];
+
+function detectNegativePreferences(text) {
+
+    const preferences = [];
+
+    if (!text)
+        return preferences;
+
+    for (const pattern of NEGATIVE_PATTERNS) {
+
+        const match = text.match(pattern);
+
+        if (!match)
+            continue;
+
+        let value = match[1]
+            .toLowerCase()
+            .trim();
+
+        if (!value)
+            continue;
+
+        preferences.push(value);
+
+    }
+
+    return preferences;
+}
+
+function normalizeNegativePreference(value) {
+
+    const cleaned = clean(value);
+
+    const aliases = {
+
+        "sport": ["sports"],
+        "sports": ["sports"],
+
+        "sing": ["singing"],
+        "singing": ["singing"],
+
+        "photo": ["photography"],
+        "photography": ["photography"],
+
+        "competitive": ["competitive", "competition"],
+        "competition": ["competitive", "competition"],
+
+        "performing art": ["performing arts"],
+        "performing arts": ["performing arts"],
+
+        "tech": ["technology"],
+        "technology": ["technology"]
+
+    };
+
+    return aliases[cleaned] || [cleaned];
+}
+
+
+// ======================================================
 // RESOLVE FOLLOW-UP SEARCH QUERIES
 // ======================================================
 
@@ -1542,6 +1618,17 @@ app.post("/chat", async (req, res) => {
 
         console.log("\n========================================");
         console.log("👤 User:", userMessage);
+
+        //temporary
+        const testNegative =
+            detectNegativePreferences(userMessage)
+                .flatMap(normalizeNegativePreference);
+
+        console.log(
+            "🚫 Negative preferences:",
+            testNegative
+        );
+        //temporary
 
         // ----------------------------------
         // Handle Casual Greetings
