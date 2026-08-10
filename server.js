@@ -359,6 +359,54 @@ function detectNegativePreferences(text) {
     return preferences;
 }
 
+function detectPositivePreferences(text) {
+
+    if (!text)
+        return [];
+
+    const patterns = [
+        /\bi like\s+(.+?)(?=\s+but\s+|\s+and\s+i\s+(?:don't|do not|hate|dislike)|[.!?,]|$)/gi,
+
+        /\bi love\s+(.+?)(?=\s+but\s+|\s+and\s+i\s+(?:don't|do not|hate|dislike)|[.!?,]|$)/gi,
+
+        /\bi enjoy\s+(.+?)(?=\s+but\s+|\s+and\s+i\s+(?:don't|do not|hate|dislike)|[.!?,]|$)/gi,
+
+        /\bi'm interested in\s+(.+?)(?=\s+but\s+|\s+and\s+i\s+(?:don't|do not|hate|dislike)|[.!?,]|$)/gi,
+
+        /\bi am interested in\s+(.+?)(?=\s+but\s+|\s+and\s+i\s+(?:don't|do not|hate|dislike)|[.!?,]|$)/gi
+    ];
+
+    const preferences = [];
+
+    for (const pattern of patterns) {
+
+        let match;
+
+        while ((match = pattern.exec(text)) !== null) {
+
+            const value = match[1]
+                .trim()
+                .replace(/\s+/g, " ");
+
+            if (value)
+                preferences.push(value);
+        }
+    }
+
+    return preferences;
+}
+
+function buildPositiveSearchQuery(text) {
+
+    const positivePreferences =
+        detectPositivePreferences(text);
+
+    if (positivePreferences.length === 0)
+        return null;
+
+    return positivePreferences.join(" ");
+}
+
 function normalizeNegativePreference(value) {
 
     const cleaned = clean(value);
@@ -1925,14 +1973,32 @@ app.post("/chat", async (req, res) => {
 
         let matches;
 
-        console.log("🔎 Running normal CCA search");
+        const positiveSearchQuery =
+            buildPositiveSearchQuery(userMessage);
 
-        matches = searchCCA(
-            searchResult.query,
-            searchResult.isSimilarRequest
+        console.log(
+            "❤️ Positive search query:",
+            positiveSearchQuery
         );
 
-        // Remove CCAs that match the user's negative preferences
+        console.log("🔎 Running normal CCA search");
+
+        if (positiveSearchQuery) {
+
+            matches = searchCCA(
+                positiveSearchQuery,
+                searchResult.isSimilarRequest
+            );
+
+        } else {
+
+            matches = searchCCA(
+                searchResult.query,
+                searchResult.isSimilarRequest
+            );
+
+        }
+
         matches = filterNegativePreferences(
             matches,
             negativePreferences
