@@ -35,10 +35,6 @@ console.log(`✅ Loaded ${ccaDatabase.length} CCAs.`);
 // GOOGLE GEMINI
 // ======================================================
 
-// TODO:
-// Move API key into a .env file before public deployment.
-// Keeping it here temporarily for local development.
-
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY
 });
@@ -279,46 +275,10 @@ function extractKeywords(text) {
 
 }
 
-function isRecommendationRequest(text) {
-
-    if (!text)
-        return false;
-
-    const query = clean(text);
-
-    return (
-        /\brecommend\b/.test(query) ||
-        /\brecommendation\b/.test(query) ||
-        /\bsuggest\b/.test(query) ||
-        /\bwhat cca should i join\b/.test(query) ||
-        /\bwhich cca should i join\b/.test(query) ||
-        /\bwhat cca can i join\b/.test(query) ||
-        /\bwhich cca can i join\b/.test(query) ||
-        /\bwhat ccas should i join\b/.test(query) ||
-        /\bwhich ccas should i join\b/.test(query) ||
-        /\bwhat ccas would you recommend\b/.test(query) ||
-        /\bwhat cca would you recommend\b/.test(query)
-    );
-}
-
 
 // ======================================================
 // NEGATIVE PREFERENCE DETECTION
 // ======================================================
-
-const NEGATIVE_PATTERNS = [
-    /\bi don't like ([^.!?,]+)/i,
-    /\bi do not like ([^.!?,]+)/i,
-    /\bi dislike ([^.!?,]+)/i,
-    /\bi hate ([^.!?,]+)/i,
-    /\bi don't want ([^.!?,]+)/i,
-    /\bi do not want ([^.!?,]+)/i,
-    /\bnot interested in ([^.!?,]+)/i,
-    /\bexclude ([^.!?,]+)/i,
-    /\bwithout ([^.!?,]+)/i,
-    /\bbut not ([^.!?,]+)/i,
-    /\bexcept ([^.!?,]+)/i
-];
 
 function detectNegativePreferences(text) {
 
@@ -737,37 +697,6 @@ const INTEREST_GROUPS = {
     ]
 
 };
-
-function searchForRecommendation(negativePreferences = []) {
-
-    let results = [];
-
-    for (const cca of ccaDatabase) {
-
-        // Exclude anything the user explicitly dislikes
-        if (
-            matchesNegativePreference(
-                cca,
-                negativePreferences
-            )
-        ) {
-
-            console.log(
-                `🚫 Excluded CCA: ${cca.name}`
-            );
-
-            continue;
-        }
-
-        results.push({
-            score: 1,
-            confidence: "RECOMMENDATION",
-            cca
-        });
-    }
-
-    return results;
-}
 
 function searchForNegativeOnlyPreferences(negativePreferences = []) {
 
@@ -1481,6 +1410,42 @@ ${userMessage}
 
 ==================================================
 
+NEGATIVE PREFERENCE INTERPRETATION
+
+When the user's question contains a negative preference or tells you
+what they do NOT want, interpret that preference semantically.
+
+Do NOT rely only on exact keyword matches.
+
+For example:
+
+• "I don't want a CCA that requires singing."
+  means the user wants to avoid CCAs that require singing.
+
+• "I don't want anything competitive."
+  means the user wants to avoid CCAs that involve competitive activity.
+
+Only exclude or negatively rank a CCA when there is reasonable evidence
+that it conflicts with the user's stated preference.
+
+Do NOT infer additional preferences that the user did not state.
+
+For example:
+
+• "I don't want singing" does NOT automatically mean
+  "I don't want music."
+
+• "I don't want competitive CCAs" does NOT automatically mean
+  "I don't want sports."
+
+Preserve the meaning of the user's original preference even when it is
+phrased differently from the information in the CCA database.
+
+When evaluating recommendations, consider the CCA's actual description
+and activities rather than looking only for matching keywords.
+
+==================================================
+
 Instructions:
 
 The supplied TP CCA database is your PRIMARY source.
@@ -1992,13 +1957,6 @@ app.post("/chat", async (req, res) => {
         const searchResult = resolveSearchQuery(
             userMessage,
             history
-        );
-
-        const recommendationRequest =
-            isRecommendationRequest(userMessage);
-
-        console.log(
-            `🎯 Recommendation request: ${recommendationRequest}`
         );
 
         console.log(
