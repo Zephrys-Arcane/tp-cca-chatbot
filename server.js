@@ -769,6 +769,40 @@ function searchForRecommendation(negativePreferences = []) {
     return results;
 }
 
+function searchForNegativeOnlyPreferences(negativePreferences = []) {
+
+    const results = [];
+
+    for (const cca of ccaDatabase) {
+
+        // Skip CCAs that match something the user dislikes
+        if (
+            matchesNegativePreference(
+                cca,
+                negativePreferences
+            )
+        ) {
+
+            console.log(
+                `🚫 Excluded CCA: ${cca.name}`
+            );
+
+            continue;
+        }
+
+        // No positive preference exists,
+        // so every remaining CCA has equal relevance.
+        results.push({
+            score: 1,
+            confidence: "LOW",
+            cca
+        });
+
+    }
+
+    return results;
+}
+
 // ======================================================
 // SEARCH DATABASE
 // ======================================================
@@ -1981,16 +2015,46 @@ app.post("/chat", async (req, res) => {
             positiveSearchQuery
         );
 
-        console.log("🔎 Running normal CCA search");
-
         if (positiveSearchQuery) {
+
+            // ==========================================
+            // POSITIVE PREFERENCE SEARCH
+            // ==========================================
+
+            console.log("🔎 Running positive preference search");
 
             matches = searchCCA(
                 positiveSearchQuery,
                 searchResult.isSimilarRequest
             );
 
+            // Remove anything the user dislikes
+            matches = filterNegativePreferences(
+                matches,
+                negativePreferences
+            );
+
+        } else if (negativePreferences.length > 0) {
+
+            // ==========================================
+            // NEGATIVE-ONLY SEARCH
+            // ==========================================
+
+            console.log(
+                "🔎 Running negative-only preference search"
+            );
+
+            matches = searchForNegativeOnlyPreferences(
+                negativePreferences
+            );
+
         } else {
+
+            // ==========================================
+            // NORMAL SEARCH
+            // ==========================================
+
+            console.log("🔎 Running normal CCA search");
 
             matches = searchCCA(
                 searchResult.query,
@@ -1998,11 +2062,6 @@ app.post("/chat", async (req, res) => {
             );
 
         }
-
-        matches = filterNegativePreferences(
-            matches,
-            negativePreferences
-        );
 
         if (
             matches.length === 0 &&
