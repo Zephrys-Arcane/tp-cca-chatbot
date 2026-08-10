@@ -288,9 +288,20 @@ function resolveSearchQuery(userMessage, history) {
 
     const rawQuery = clean(userMessage);
 
+    // Detect whether the user is asking for similar / other CCAs
+    const similarCCARequest =
+        /\b(similar|similar to|like|other ccas|other cca|alternative|alternatives)\b/i.test(
+            rawQuery
+        );
+
     // No history → search normally
     if (!history || history.length === 0) {
-        return userMessage;
+
+        return {
+            query: userMessage,
+            isSimilarRequest: similarCCARequest
+        };
+
     }
 
     // Words/phrases that usually indicate a follow-up question
@@ -312,7 +323,6 @@ function resolveSearchQuery(userMessage, history) {
     ];
 
     // Check whether the user explicitly mentions a CCA.
-    // If they do, this is a new CCA search, not a follow-up.
     const explicitlyMentionedCCA = ccaDatabase.find(cca => {
 
         const ccaName = clean(cca.name);
@@ -327,7 +337,10 @@ function resolveSearchQuery(userMessage, history) {
             `🆕 New CCA explicitly mentioned: "${explicitlyMentionedCCA.name}"`
         );
 
-        return userMessage;
+        return {
+            query: userMessage,
+            isSimilarRequest: similarCCARequest
+        };
 
     }
 
@@ -336,35 +349,34 @@ function resolveSearchQuery(userMessage, history) {
     );
 
     if (!isFollowUp) {
-        return userMessage;
+
+        return {
+            query: userMessage,
+            isSimilarRequest: similarCCARequest
+        };
+
     }
 
-    // Find the most recent assistant response
-    // and previous user messages.
+    // Find the most recent user message containing a CCA
     const recentHistory = history.slice(-10);
 
-    // Try to identify a CCA mentioned in USER messages only.
     let referencedCCA = null;
 
-    // Search newest user messages first
     for (let i = recentHistory.length - 1; i >= 0; i--) {
 
         const message = recentHistory[i];
 
-        // Ignore Gemini/assistant messages completely
+        // Ignore assistant messages
         if (!message?.content || message.role !== "user")
             continue;
 
         const messageText = clean(message.content);
 
-        // Check database CCA names against USER messages only
         for (const cca of ccaDatabase) {
 
             const ccaName = clean(cca.name);
 
-            if (
-                messageText.includes(ccaName)
-            ) {
+            if (messageText.includes(ccaName)) {
 
                 referencedCCA = cca.name;
                 break;
@@ -375,42 +387,16 @@ function resolveSearchQuery(userMessage, history) {
 
         if (referencedCCA)
             break;
+
     }
 
-    // If we could not identify a CCA,
-    // keep the original query.
+    // Could not identify a CCA
     if (!referencedCCA) {
-        return userMessage;
-    }
 
-    // ==========================================
-    // DETECT SIMILAR-CCA FOLLOW-UP
-    // ==========================================
-
-    const similarCCARequest =
-        /\b(similar|like|other cca|other ccas|alternative|alternatives)\b/i.test(
-            rawQuery
-        );
-
-    // ==========================================
-    // RESOLVE QUERY
-    // ==========================================
-
-    let resolvedQuery;
-
-    if (similarCCARequest) {
-
-        // Preserve the user's similarity intent
-        // while replacing "it / this CCA / etc." with
-        // the actual CCA name.
-
-        resolvedQuery =
-            `${referencedCCA} similar CCAs`;
-
-    } else {
-
-        // Normal follow-up
-        resolvedQuery = referencedCCA;
+        return {
+            query: userMessage,
+            isSimilarRequest: similarCCARequest
+        };
 
     }
 
@@ -422,12 +408,12 @@ function resolveSearchQuery(userMessage, history) {
         `🎯 Resolved CCA: "${referencedCCA}"`
     );
 
-    console.log(
-        `🔍 Search Query: ${resolvedQuery}`
-    );
+    return {
+        query: referencedCCA,
+        isSimilarRequest: similarCCARequest
+    };
 
-    return resolvedQuery;
-    }
+}
 
 
 // ======================================================
@@ -499,7 +485,7 @@ const INTEREST_GROUPS = {
 // SEARCH DATABASE
 // ======================================================
 
-function searchCCA(userMessage) {
+function searchCCA(userMessage, isSimilarRequest = false) {
 
     const rawQuery = clean(userMessage);
 
@@ -611,11 +597,6 @@ function searchCCA(userMessage) {
 
     // Check whether this is asking for similar / other CCAs.
     // Similar-CCA questions should NOT return only the exact CCA.
-    const similarCCARequest =
-        /\b(similar|similar to|like|other ccAs|other cca|alternative|alternatives)\b/i.test(
-            rawQuery
-        );
-
     if (exactCCA && !similarCCARequest) {
 
     return [{
@@ -630,7 +611,7 @@ function searchCCA(userMessage) {
 // SIMILAR CCA SEARCH
 // ==========================================
 
-if (similarCCARequest && exactCCA) {
+if (isSimilarRequest && exactCCA) {
 
     const targetKeywords =
         normaliseArray(exactCCA.keywords);
@@ -1672,14 +1653,17 @@ app.post("/chat", async (req, res) => {
         // Search TP CCA Database
         // ----------------------------------
 
-        const searchQuery = resolveSearchQuery(
+        const searchResult = resolveSearchQuery(
             userMessage,
             history
         );
 
-        console.log(`🔍 Search Query: ${searchQuery}`);
+        console.log(`🔍 Search Query: ${searchResult.query}`);
 
-        const matches = searchCCA(searchQuery);
+        const matches = searchCCA(
+            searchResult.query,
+            searchResult.isSimilarRequest
+        );
 
 // ----------------------------------
 // Handle Category Listings
